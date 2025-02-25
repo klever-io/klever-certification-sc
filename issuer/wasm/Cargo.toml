@@ -1,0 +1,22 @@
+[package]
+name = "issuer-wasm"
+version = "0.0.1"
+edition = "2025"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+[dependencies.issuer]
+path = ".."
+
+[dependencies.klever-sc-wasm-adapter]
+version = "0.43.3"
+
+[workspace]
+members = ["."]
