@@ -1,0 +1,233 @@
+#![no_std]
+
+klever_sc::imports!();
+klever_sc::derive_imports!();
+
+// Certificatie struct
+#[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone)]
+struct Certificate {
+    pub certificate_id: [u8; 32],
+    pub issuer: Address,
+    pub issuance_date: u64,
+    pub expiration_date: u64,
+    pub is_valid: bool,
+    pub merkle_root: [u8; 32],
+}
+
+#[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone, Copy)]
+struct Audit{
+    pub issuance_date: u64,
+    pub expiration_date: u64,
+    pub is_valid: bool,
+}
+
+// Leaf struct
+#[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone, Copy)]
+struct Leaf {
+    hash: [u8; 32],
+    salt: [u8; 32],
+}
+
+// Max leaves per tree
+const MAX_LEAVES: usize = 32;
+
+#[klever_sc::contract]
+pub trait Issuer {
+
+    #[storage_mapper("trees")]
+    fn trees(&self, certification_id: [u8; 32]) -> VecMapper<Leaf>;
+
+    #[storage_mapper("roots")]
+    fn roots(&self, certification_id: [u8; 32]) -> SingleValueMapper<[u8; 32]>;
+
+    #[storage_mapper("certificates")]
+    fn certifications(&self, certificate_id: [u8; 32]) -> SingleValueMapper<Certificate>;
+    
+
+    #[init]
+    fn init(&self) {
+    }
+
+    fn sort_and_hash_two_nodes(&self, left: &[u8; 32], right: &[u8; 32]) -> [u8; 32] {
+        let (first, second) = if left <= right { (left, right) } else { (right, left) };
+        let mut input: ManagedBuffer = ManagedBuffer::new_from_bytes(first);
+        input.append_bytes(second);
+        self.crypto().keccak256(input).to_byte_array()
+    }
+
+    fn create_certificate_id(&self,merkle_root: [u8; 32],block_timestamp: u64) -> [u8; 32] {
+        let mut input: ManagedBuffer = ManagedBuffer::new_from_bytes(&merkle_root);
+        input.append(&ManagedBuffer::new_from_bytes(&block_timestamp.to_be_bytes()));
+        self.crypto().keccak256(input).to_byte_array()
+    }
+
+    fn compute_leafs(&self, hashes: ManagedVec<[u8; 32]>,salt: [u8; 32]) -> Vec<Leaf> {
+        let mut leafs = Vec::<Leaf>::new();
+
+        for hash in hashes.iter() {
+            leafs.push(Leaf {
+                hash: hash,
+                salt: salt,
+            });
+        }
+
+        leafs
+    }
+
+    fn compute_merkle_tree(&self, tree: Vec<Leaf>) -> [u8; 32] {
+        // Compute merkle tree 
+        let mut current_level: [[u8; 32]; MAX_LEAVES] = [[0; 32]; MAX_LEAVES];
+        let mut next_level: [[u8; 32]; MAX_LEAVES] = [[0; 32]; MAX_LEAVES];
+        let mut current_level_size = tree.len();
+
+        for i in 0..current_level_size {
+            current_level[i] = tree[i+1].hash;
+        }
+        while current_level_size > 1 {
+            let mut next_level_size = 0;
+            let mut i = 0;
+
+            while i < current_level_size {
+                if i + 1 < current_level_size {
+                    let (left, right) = (current_level[i], current_level[i + 1]);
+                    next_level[next_level_size] = self.sort_and_hash_two_nodes(&left, &right);
+                } else {
+                    next_level[next_level_size] = current_level[i];
+                }
+                next_level_size += 1;
+                i += 2;
+            }
+
+            current_level_size = next_level_size;
+            current_level[..current_level_size].copy_from_slice(&next_level[..next_level_size]);
+        }
+        let root = current_level[0];
+
+        root
+    }
+
+    fn get_proof(&self, certificate_id: [u8; 32], data: [u8; 32]) -> ArrayVec<[u8; 32], MAX_LEAVES> {
+        let leaves = self.trees(certificate_id);
+        let leaf_index = leaves.iter().position(|x| x.hash == data).expect("Leaf not found");
+
+        let mut current_level: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
+        let mut next_level: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
+        let mut proof: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
+        let mut current_index = leaf_index;
+        let mut current_level_size = leaves.len();
+
+        for i in 0..current_level_size {
+            current_level.push(leaves.get(i + 1).hash);
+        }
+
+        while current_level_size > 1 {
+            let mut next_level_size = 0;
+            let mut i = 0;
+
+            while i < current_level_size {
+                if i + 1 < current_level_size {
+                    let (left, right) = (current_level[i], current_level[i + 1]);
+                    if i == current_index || i + 1 == current_index {
+                        proof.push(if i == current_index { right } else { left });
+                    }
+                    next_level.push(self.sort_and_hash_two_nodes(&left, &right));
+                } else {
+                    next_level.push(current_level[i]);
+                }
+                next_level_size += 1;
+                i += 2;
+            }
+
+            current_level.clear();
+            current_level.try_extend_from_slice(&next_level[..next_level_size]).unwrap();
+            next_level.clear();
+            current_level_size = next_level_size;
+            current_index /= 2;
+        }
+
+        proof
+    }
+
+    fn verify_proof(&self, leaf_hash: [u8; 32], proof: ArrayVec<[u8; 32], MAX_LEAVES>, root: [u8; 32]) -> bool {
+        let mut computed_hash = leaf_hash;
+
+        for proof_element in proof.iter() {
+            computed_hash = self.sort_and_hash_two_nodes(&computed_hash, proof_element);
+        }
+
+        computed_hash == root
+    }
+
+    fn hash_leaf(&self, data: [u8; 32], salt: [u8; 32]) -> [u8; 32] {
+        if salt == [0; 32] {
+            return data;
+        }
+
+        let mut input: ManagedBuffer = ManagedBuffer::new_from_bytes(&data);
+        input.append_bytes(&salt);
+        let hashed_data = self.crypto().keccak256(input).to_byte_array();
+
+        hashed_data
+    }
+
+    #[only_owner]
+    #[endpoint]
+    fn create_certificate(&self, hashes: ManagedVec<[u8; 32]>)  {
+        let leafs = self.compute_leafs(hashes,[0; 32]);
+        let root = self.compute_merkle_tree(leafs.clone());
+
+        let block_timestamp = self.blockchain().get_block_timestamp();
+
+        let certificate_id : [u8; 32] = self.create_certificate_id(root, block_timestamp);
+
+        self.roots(certificate_id).set(root);
+        
+        for leaf in leafs {
+            self.trees(certificate_id).push(&leaf);
+        }
+
+        self.certifications(certificate_id).set(Certificate {
+            certificate_id: certificate_id,
+            issuer: self.blockchain().get_caller().to_address(),
+            issuance_date: block_timestamp,
+            expiration_date: 0,
+            is_valid: true,
+            merkle_root: root,
+        });
+
+    }
+
+    #[view]
+    fn check_certificate(&self,certificate_id: [u8; 32]) -> bool {
+        let certificate = self.certifications(certificate_id).get();
+
+        certificate.is_valid
+    }
+
+    #[only_owner]
+    #[endpoint]
+    fn revoke_certificate(self,certificate_id: [u8; 32]) {
+        self.certifications(certificate_id).update(|certificate| {
+            certificate.is_valid = false;
+            certificate.expiration_date = self.blockchain().get_block_timestamp();
+        });
+    }
+
+    #[view]
+    fn audit_certificate(&self,certificate_id: [u8; 32]) -> Audit {
+        let certificate = self.certifications(certificate_id).get();
+
+        Audit { issuance_date: certificate.issuance_date,
+                expiration_date: certificate.expiration_date,
+                is_valid: certificate.is_valid
+            }
+    }
+
+    #[endpoint]
+    fn proof_certificate(&self,certificate_id: [u8; 32],data: [u8; 32], salt: [u8; 32]) -> bool { 
+        let hash = self.hash_leaf(data, salt);
+        let proof = self.get_proof(certificate_id, hash);
+        let root = self.roots(certificate_id).get();
+        self.verify_proof(hash, proof, root)
+    }
+}

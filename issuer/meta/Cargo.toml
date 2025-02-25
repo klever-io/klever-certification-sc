@@ -1,0 +1,10 @@
+[package]
+name = "issuer-meta"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[dependencies.issuer]
+path = ".."
+
+[dependencies.klever-sc-meta]
+version = "0.43.3"
