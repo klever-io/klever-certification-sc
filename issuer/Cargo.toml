@@ -1,8 +1,8 @@
 [package]
 name = "issuer"
-version = "0.0.0"
-authors = ["you"]
-edition = "2021"
+version = "0.0.1"
+authors = ["Beroni Magalhaes"]
+edition = "2025"
 publish = false
 
 [lib]
