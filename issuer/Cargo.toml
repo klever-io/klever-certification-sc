@@ -1,7 +1,7 @@
 [package]
 name = "issuer"
 version = "0.0.1"
-authors = ["Beroni Magalhaes"]
+authors = ["Kleverchain Team"]
 edition = "2025"
 publish = false
 
