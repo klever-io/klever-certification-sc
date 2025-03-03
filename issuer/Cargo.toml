@@ -2,19 +2,23 @@
 name = "issuer"
 version = "0.0.1"
 authors = ["Kleverchain Team"]
-edition = "2025"
+edition = "2021"
 publish = false
 
 [lib]
 path = "src/issuer.rs"
-[dependencies.klever-sc]
-version = "0.43.3"
 
-[dev-dependencies]
-num-bigint = "0.4.2"
+[dependencies.klever-sc]
+git = "https://github.com/klever-io/klever-vm-sdk-rs-internal"
+rev = "0d90b14"
+version = "*"
+features = ["alloc"]
+
 
 [dev-dependencies.klever-sc-scenario]
-version = "0.43.3"
+git = "https://github.com/klever-io/klever-vm-sdk-rs-internal"
+rev = "0d90b14"
+version = "*"
 
 [workspace]
 members = [".", "meta"]
