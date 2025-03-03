@@ -33,7 +33,7 @@ struct Leaf {
 
 // Max leaves per tree
 const MAX_LEAVES: usize = 32;
-const BATCH_SIZE: usize = 64;
+const BATCH_SIZE: usize = 32;
 
 #[klever_sc::contract]
 pub trait Issuer {
@@ -59,12 +59,14 @@ pub trait Issuer {
         self.crypto().keccak256(input).to_byte_array()
     }
 
-    fn create_certificate_id(&self, mut data: ManagedBuffer<Self::Api>, block_timestamp: u64) -> [u8; 32] {
-        data.append(&ManagedBuffer::new_from_bytes(&block_timestamp.to_be_bytes()));
-        self.crypto().keccak256(data).to_byte_array()
+    fn create_certificate_id(&self, data: &[u8], block_timestamp: u64) -> [u8; 32] {
+        let mut mb = ManagedBuffer::new_from_bytes(data);
+        mb.append(&ManagedBuffer::new_from_bytes(&block_timestamp.to_be_bytes()));
+    
+        self.crypto().keccak256(mb).to_byte_array()
     }
 
-    fn compute_merkle_tree(&self, certificate_id: [u8; 32],leafs: &ManagedBuffer<Self::Api>, salt:[u8;32]) -> [u8; 32] {
+    fn compute_merkle_tree(&self, certificate_id: [u8; 32],leafs: &[u8], salt:[u8;32]) -> [u8; 32] {
         let mut tree = self.trees(certificate_id);
 
         let mut current_level: [[u8; 32]; MAX_LEAVES] = [[0; 32]; MAX_LEAVES];
@@ -73,7 +75,8 @@ pub trait Issuer {
 
         for i in 0..current_level_size {
             let mut leaf = [0; 32];
-            let _ = leafs.load_slice(BATCH_SIZE * i, &mut leaf[..32]);
+            // copy from leafs
+            leaf.copy_from_slice(&leafs[BATCH_SIZE * i..BATCH_SIZE * (i + 1)]);
             // leaf = self.hash_leaf(leaf, salt);
 
             tree.push(&Leaf {
@@ -168,13 +171,13 @@ pub trait Issuer {
     }
 
     #[endpoint(messejana)]
-    fn create_certificate(&self, hashes:ManagedBuffer<Self::Api>) -> [u8; 32] {
+    fn create_certificate(&self, hashes: &[u8]) -> [u8; 32] {
         require!(hashes.len() <= MAX_LEAVES*BATCH_SIZE, "certicate limited to 32 fields");
         require!(hashes.len() % BATCH_SIZE == 0, "wrong data length");
         
         let block_timestamp = self.blockchain().get_block_timestamp();
 
-        let certificate_id : [u8; 32] = self.create_certificate_id(hashes.clone(), block_timestamp);
+        let certificate_id : [u8; 32] = self.create_certificate_id(hashes, block_timestamp);
 
         let root = self.compute_merkle_tree(certificate_id,&hashes,[0;32]);
 
@@ -190,6 +193,14 @@ pub trait Issuer {
         });
 
         certificate_id
+    }
+
+    #[endpoint(val)]
+    fn get_valid(&self, certificate_id: [u8; 32]) -> [u8; 32] {
+        let leaves = self.trees(certificate_id);
+        
+        let leaf = leaves.get(1);
+        leaf.hash
     }
 
     // #[view]
