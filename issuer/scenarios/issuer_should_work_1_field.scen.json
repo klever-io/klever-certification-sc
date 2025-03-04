@@ -1,5 +1,5 @@
 {
-    "name": "empty",
+    "name": "should_work_1_field",
     "steps": [
         {
             "step": "setState",
@@ -41,7 +41,7 @@
             "tx": {
                 "from": "address:owner",
                 "to": "sc:empty",
-                "function": "messejana",
+                "function": "create_certificate",
                 "arguments": ["0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7"],
                 "gasLimit": "5,000,000",
                 "gasPrice": "0"
@@ -56,34 +56,14 @@
         },
         {
             "step": "scCall",
-            "id": "getval",
-            "tx": {
-                "from": "address:owner",
-                "to": "sc:empty",
-                "function": "val",
-                "arguments": ["0x8aac15f0fb6dcfe8298ea957c5e63646f93dd06a430f4243103ee47727af5405"],
-                "gasLimit": "5,000,000",
-                "gasPrice": "0"
-            },
-            "expect": {
-                "out": ["0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7"],
-                "status": "",
-                "logs": [],
-                "gas": "*",
-                "refund": "*"
-            }
-        },
-        {
-            "step": "scCall",
             "id": "proof",
             "tx": {
                 "from": "address:owner",
                 "to": "sc:empty",
-                "function": "parangaba",
+                "function": "proof_certificate",
                 "arguments": [
                     "0x8aac15f0fb6dcfe8298ea957c5e63646f93dd06a430f4243103ee47727af5405",
-                    "0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7",
-                    "0x0000000000000000000000000000000000000000000000000000000000000000"
+                    "0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7"
                 ],
                 "gasLimit": "5,000,000",
                 "gasPrice": "0"

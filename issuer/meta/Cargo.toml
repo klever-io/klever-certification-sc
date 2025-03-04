@@ -7,6 +7,5 @@ publish = false
 path = ".."
 
 [dependencies.klever-sc-meta]
-git = "https://github.com/klever-io/klever-vm-sdk-rs-internal"
-rev = "0d90b14"
+path = "/Users/beroni/klever/klever-vm-sdk-rs-internal/framework/meta"
 version = "*"

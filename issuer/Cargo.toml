@@ -9,15 +9,12 @@ publish = false
 path = "src/issuer.rs"
 
 [dependencies.klever-sc]
-git = "https://github.com/klever-io/klever-vm-sdk-rs-internal"
-rev = "0d90b14"
+path = "/Users/beroni/klever/klever-vm-sdk-rs-internal/framework/base"
 version = "*"
 features = ["alloc"]
 
-
 [dev-dependencies.klever-sc-scenario]
-git = "https://github.com/klever-io/klever-vm-sdk-rs-internal"
-rev = "0d90b14"
+path = "/Users/beroni/klever/klever-vm-sdk-rs-internal/framework/scenario"
 version = "*"
 
 [workspace]

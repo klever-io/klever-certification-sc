@@ -16,12 +16,12 @@ struct Certificate<M: ManagedTypeApi> {
     pub merkle_root: [u8; 32],
 }
 
-// #[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone, Copy)]
-// struct Audit{
-//     pub issuance_date: u64,
-//     pub expiration_date: u64,
-//     pub is_valid: bool,
-// }
+#[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone, Copy)]
+struct Audit{
+    pub issuance_date: u64,
+    pub expiration_date: u64,
+    pub is_valid: bool,
+}
 
 // Leaf struct
 #[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone, Copy)]
@@ -109,10 +109,14 @@ pub trait Issuer {
         root
     }
 
-    fn get_proof(&self, certificate_id: [u8; 32], data: [u8; 32]) -> ArrayVec<[u8; 32], 32> {
+    fn get_proof(&self, certificate_id: [u8; 32], data: [u8; 32]) -> Option<ArrayVec<[u8; 32], 32>> {
         let leaves = self.trees(certificate_id);
 
-        let leaf_index = leaves.iter().position(|x| x.hash == data).expect("Leaf not found");
+        let leaf_index = leaves.iter().position(|x| x.hash == data).unwrap_or_else( || usize::MAX);
+
+        if leaf_index == usize::MAX {
+            return None;
+        }
 
         let mut current_level: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
         let mut next_level: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
@@ -149,7 +153,7 @@ pub trait Issuer {
             current_index /= 2;
         }
 
-        proof
+        Some(proof)
     }
 
     fn verify_proof(&self, leaf_hash: [u8; 32], proof: ArrayVec<[u8; 32], MAX_LEAVES>, root: [u8; 32]) -> bool {
@@ -162,14 +166,20 @@ pub trait Issuer {
         computed_hash == root
     }
 
-    fn hash_leaf(&self, data: [u8; 32], _salt: [u8; 32]) -> [u8; 32] {
-        data
+    fn hash_leaf(&self, data: &[u8], _salt: [u8; 32]) -> [u8; 32] {
+        let mut leaf = [0; 32];
+        leaf.copy_from_slice(&data[0..32]);
+
+        leaf
     }
 
-    #[endpoint(messejana)]
+    #[only_owner]
+    #[endpoint]
     fn create_certificate(&self, hashes: &[u8]) -> [u8; 32] {
-        require!(hashes.len() <= MAX_LEAVES*BATCH_SIZE, "certicate limited to 32 fields");
-        require!(hashes.len() % BATCH_SIZE == 0, "wrong data length");
+        let sizeoft = hashes.len();
+
+        require!(sizeoft <= MAX_LEAVES*BATCH_SIZE, "certicate limited to 32 fields");
+        require!(sizeoft % BATCH_SIZE == 0, "wrong data length");
         
         let block_timestamp = self.blockchain().get_block_timestamp();
 
@@ -191,45 +201,41 @@ pub trait Issuer {
         certificate_id
     }
 
-    #[endpoint(val)]
-    fn get_valid(&self, certificate_id: [u8; 32]) -> [u8; 32] {
-        let leaves = self.trees(certificate_id);
-        
-        let leaf = leaves.get(1);
-        leaf.hash
+    #[view]
+    fn check_certificate(&self,certificate_id: [u8; 32]) -> bool {
+        let certificate = self.certifications(certificate_id).get();
+
+        certificate.is_valid
     }
 
-    // #[view]
-    // fn check_certificate(&self,certificate_id: [u8; 32]) -> bool {
-    //     let certificate = self.certifications(certificate_id).get();
+    #[only_owner]
+    #[endpoint]
+    fn revoke_certificate(self,certificate_id: [u8; 32]) {
+        self.certifications(certificate_id).update(|certificate| {
+            certificate.is_valid = false;
+            certificate.expiration_date = self.blockchain().get_block_timestamp();
+        });
+    }
 
-    //     certificate.is_valid
-    // }
+    #[view]
+    fn audit_certificate(&self,certificate_id: [u8; 32]) -> Audit {
+        let certificate = self.certifications(certificate_id).get();
 
-    // #[only_owner]
-    // #[endpoint]
-    // fn revoke_certificate(self,certificate_id: [u8; 32]) {
-    //     self.certifications(certificate_id).update(|certificate| {
-    //         certificate.is_valid = false;
-    //         certificate.expiration_date = self.blockchain().get_block_timestamp();
-    //     });
-    // }
+        Audit { issuance_date: certificate.issuance_date,
+                expiration_date: certificate.expiration_date,
+                is_valid: certificate.is_valid
+            }
+    }
 
-    // #[view]
-    // fn audit_certificate(&self,certificate_id: [u8; 32]) -> Audit {
-    //     let certificate = self.certifications(certificate_id).get();
-
-    //     Audit { issuance_date: certificate.issuance_date,
-    //             expiration_date: certificate.expiration_date,
-    //             is_valid: certificate.is_valid
-    //         }
-    // }
-
-    #[endpoint(parangaba)]
-    fn proof_certificate(&self,certificate_id: [u8; 32],data: [u8; 32], salt: [u8; 32]) -> bool { 
-        let hash = self.hash_leaf(data, salt);
+    #[view]
+    fn proof_certificate(&self,certificate_id: [u8; 32],data: &[u8]) -> bool { 
+        let hash = self.hash_leaf(data, [0;32]);
         let proof = self.get_proof(certificate_id, hash);
-        let root = self.roots(certificate_id).get();
-        self.verify_proof(hash, proof, root)
+
+        if let Some(proof) = proof {
+            let root = self.roots(certificate_id).get();
+            return self.verify_proof(hash, proof, root);
+        }
+        false
     }
 }
