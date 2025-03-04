@@ -24,7 +24,6 @@ struct Certificate<M: ManagedTypeApi> {
 // }
 
 // Leaf struct
-// Leaf struct
 #[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone, Copy)]
 struct Leaf {
     hash: [u8; 32],
@@ -110,50 +109,47 @@ pub trait Issuer {
         root
     }
 
-        // fn get_proof(&self, certificate_id: [u8; 32], data: [u8; 32]) -> ArrayVec<[u8; 32], MAX_LEAVES> {
-    fn get_proof(&self, certificate_id: [u8; 32], data: [u8; 32])  {
+    fn get_proof(&self, certificate_id: [u8; 32], data: [u8; 32]) -> ArrayVec<[u8; 32], 32> {
         let leaves = self.trees(certificate_id);
-
-        // leaves[0].hash;
 
         let leaf_index = leaves.iter().position(|x| x.hash == data).expect("Leaf not found");
 
-        let mut _current_level: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
-        let mut _next_level: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
-        let mut _proof: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
-        let mut _current_index = leaf_index;
-        let mut _current_level_size = leaves.len();
+        let mut current_level: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
+        let mut next_level: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
+        let mut proof: ArrayVec<[u8; 32], MAX_LEAVES> = ArrayVec::new();
+        let mut current_index = leaf_index;
+        let mut current_level_size = leaves.len();
 
-        // for i in 0..current_level_size {
-        //     current_level.push(leaves.get(i + 1).hash);
-        // }
+        for i in 0..current_level_size {
+            current_level.push(leaves.get(i + 1).hash);
+        }
 
-        // while current_level_size > 1 {
-        //     let mut next_level_size = 0;
-        //     let mut i = 0;
+        while current_level_size > 1 {
+            let mut next_level_size = 0;
+            let mut i = 0;
 
-        //     while i < current_level_size {
-        //         if i + 1 < current_level_size {
-        //             let (left, right) = (current_level[i], current_level[i + 1]);
-        //             if i == current_index || i + 1 == current_index {
-        //                 proof.push(if i == current_index { right } else { left });
-        //             }
-        //             next_level.push(self.sort_and_hash_two_nodes(&left, &right));
-        //         } else {
-        //             next_level.push(current_level[i]);
-        //         }
-        //         next_level_size += 1;
-        //         i += 2;
-        //     }
+            while i < current_level_size {
+                if i + 1 < current_level_size {
+                    let (left, right) = (current_level[i], current_level[i + 1]);
+                    if i == current_index || i + 1 == current_index {
+                        proof.push(if i == current_index { right } else { left });
+                    }
+                    next_level.push(self.sort_and_hash_two_nodes(&left, &right));
+                } else {
+                    next_level.push(current_level[i]);
+                }
+                next_level_size += 1;
+                i += 2;
+            }
 
-        //     current_level.clear();
-        //     current_level.try_extend_from_slice(&next_level[..next_level_size]).unwrap();
-        //     next_level.clear();
-        //     current_level_size = next_level_size;
-        //     current_index /= 2;
-        // }
+            current_level.clear();
+            current_level.try_extend_from_slice(&next_level[..next_level_size]).unwrap();
+            next_level.clear();
+            current_level_size = next_level_size;
+            current_index /= 2;
+        }
 
-        // proof
+        proof
     }
 
     fn verify_proof(&self, leaf_hash: [u8; 32], proof: ArrayVec<[u8; 32], MAX_LEAVES>, root: [u8; 32]) -> bool {
@@ -232,9 +228,8 @@ pub trait Issuer {
     #[endpoint(parangaba)]
     fn proof_certificate(&self,certificate_id: [u8; 32],data: [u8; 32], salt: [u8; 32]) -> bool { 
         let hash = self.hash_leaf(data, salt);
-        let _proof = self.get_proof(certificate_id, hash);
-        // let root = self.roots(certificate_id).get();
-        // self.verify_proof(hash, proof, root)
-        true
+        let proof = self.get_proof(certificate_id, hash);
+        let root = self.roots(certificate_id).get();
+        self.verify_proof(hash, proof, root)
     }
 }
