@@ -1,0 +1,6 @@
+[settings]
+main = "issuer"
+
+# the only purpose of this config is to specify the allocator
+[contracts.issuer]
+allocator = "static64k"

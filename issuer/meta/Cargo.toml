@@ -1,10 +1,11 @@
 [package]
 name = "issuer-meta"
 version = "0.0.1"
-edition = "2025"
+edition = "2021"
 publish = false
 [dependencies.issuer]
 path = ".."
 
 [dependencies.klever-sc-meta]
-version = "0.43.3"
+path = "/Users/beroni/klever/klever-vm-sdk-rs-internal/framework/meta"
+version = "*"

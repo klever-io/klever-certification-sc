@@ -1,0 +1,80 @@
+{
+    "name": "should_work_1_field",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "address:owner": {
+                    "nonce": "1",
+                    "balance": "0"
+                }
+            },
+            "newAddresses": [
+                {
+                    "creatorAddress": "address:owner",
+                    "creatorNonce": "2",
+                    "newAddress": "sc:empty"
+                }
+            ]
+        },
+        {
+            "step": "scDeploy",
+            "id": "deploy",
+            "tx": {
+                "from": "address:owner",
+                "contractCode": "file:../output/issuer.wasm",
+                "arguments": [],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "create_certification",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "create_certificate",
+                "arguments": ["0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7"],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["0x8aac15f0fb6dcfe8298ea957c5e63646f93dd06a430f4243103ee47727af5405"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "proof",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "proof_certificate",
+                "arguments": [
+                    "0x8aac15f0fb6dcfe8298ea957c5e63646f93dd06a430f4243103ee47727af5405",
+                    "0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        }
+    ]
+}
