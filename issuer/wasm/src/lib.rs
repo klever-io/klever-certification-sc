@@ -4,8 +4,8 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                            5
-// Total number of exported functions:   6
+// Endpoints:                            6
+// Total number of exported functions:   7
 
 #![no_std]
 
@@ -19,7 +19,8 @@ klever_sc_wasm_adapter::endpoints! {
         create_certificate => create_certificate
         check_certificate => check_certificate
         revoke_certificate => revoke_certificate
-        audit_certificate => audit_certificate
+        change_expiration_date => change_expiration_date
+        events_certificate => events_certificate
         proof_certificate => proof_certificate
     )
 }
