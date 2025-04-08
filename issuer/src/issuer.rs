@@ -1,28 +1,22 @@
 #![no_std]
 
-
 klever_sc::derive_imports!();
 klever_sc::imports!();
 
-
-//  Certificatie struct
 #[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone)]
-struct Certificate<M: ManagedTypeApi> {
+struct Certificate {
     pub certificate_id: [u8; 32],
-    pub issuer: ManagedAddress<M>,
     pub issuance_date: u64,
     pub expiration_date: u64,
     pub revoked_date: u64,
-    pub is_valid: bool,
     pub merkle_root: [u8; 32],
 }
 
 #[derive(TopEncode, TopDecode, TypeAbi, PartialEq, Eq, Clone, Copy)]
-struct Events{
+struct CertificateEvents {
     pub issuance_date: u64,
     pub expiration_date: u64,
     pub revoked_date: u64,
-    pub is_valid: bool,
 }
 
 // Leaf struct
@@ -46,8 +40,16 @@ pub trait Issuer {
     fn roots(&self, certification_id: [u8; 32]) -> SingleValueMapper<[u8; 32]>;
 
     #[storage_mapper("certificates")]
-    fn certifications(&self, certificate_id: [u8; 32]) -> SingleValueMapper<Certificate<Self::Api>>;
-    
+    fn certifications(&self, certificate_id: [u8; 32]) -> SingleValueMapper<Certificate>;
+
+    #[event("issue")]
+    fn issue_event(&self, certificate_id: [u8; 32]);
+
+    #[event("revoke")]
+    fn revoke_event(&self, certificate_id: [u8; 32]);
+
+    #[event("change_expiration_date")]
+    fn change_expiration_date_event(&self, certificate_id: [u8; 32]);
 
     #[init]
     fn init(&self) {
@@ -77,7 +79,6 @@ pub trait Issuer {
 
         for i in 0..current_level_size {
             let mut leaf = [0; 32];
-            // copy from leafs
             leaf.copy_from_slice(&leafs[BATCH_SIZE * i..BATCH_SIZE * (i + 1)]);
             leaf = self.hash_leaf(leaf, salt);
 
@@ -178,7 +179,7 @@ pub trait Issuer {
 
     #[only_owner]
     #[endpoint]
-    fn create_certificate(&self, expiration_date: u64, salt:[u8;32], hashes: &[u8]) -> [u8; 32] {
+    fn create(&self, expiration_date: u64, salt:[u8;32], hashes: &[u8]) -> [u8; 32] {
         let size_of_hashes = hashes.len();
 
         require!(size_of_hashes <= MAX_LEAVES*BATCH_SIZE, "certicate limited to 32 fields");
@@ -186,8 +187,8 @@ pub trait Issuer {
         
         let block_timestamp = self.blockchain().get_block_timestamp();
 
-        // if expiration_date equals zero, certificate don't expires
-        require!((expiration_date != 0 && expiration_date >= block_timestamp), "expiration date must be greater than current date");
+        require!((expiration_date != 0 && expiration_date >= block_timestamp)
+         || expiration_date == 0, "expiration date must be greater than current date or zero");
 
         let certificate_id : [u8; 32] = self.create_certificate_id(hashes, salt, block_timestamp);
 
@@ -197,60 +198,74 @@ pub trait Issuer {
 
         self.certifications(certificate_id).set(Certificate {
             certificate_id: certificate_id,
-            issuer: self.blockchain().get_caller(),
             issuance_date: block_timestamp,
             expiration_date: expiration_date,
             revoked_date: 0,
-            is_valid: true,
             merkle_root: root,
         });
+
+        self.issue_event(certificate_id);
 
         certificate_id
     }
 
     #[view]
-    fn check_certificate(&self,certificate_id: [u8; 32]) -> bool {
+    fn check(&self,certificate_id: [u8; 32]) -> bool {
         let certificate = self.certifications(certificate_id).get();
 
         if certificate.expiration_date != 0 && certificate.expiration_date < self.blockchain().get_block_timestamp() {
             return false;
         }
 
-        certificate.is_valid
+        if certificate.revoked_date != 0 {
+            return false;
+        }
+
+        true
     }
 
     #[only_owner]
     #[endpoint]
-    fn revoke_certificate(self,certificate_id: [u8; 32]) {
+    fn revoke(self,certificate_id: [u8; 32]) {
         self.certifications(certificate_id).update(|certificate| {
-            certificate.is_valid = false;
+            require!(certificate.revoked_date == 0, "certificate already revoked");
             certificate.revoked_date = self.blockchain().get_block_timestamp();
         });
+
+        self.revoke_event(certificate_id);
     }
 
     #[only_owner]
     #[endpoint]
     fn change_expiration_date(&self, certificate_id: [u8; 32], expiration_date: u64) {
+        let block_timestamp = self.blockchain().get_block_timestamp();
+    
         self.certifications(certificate_id).update(|certificate| {
-            require!(expiration_date > certificate.expiration_date, "new expiration date must be greater than current date");
+            require!(
+                expiration_date == 0 || 
+                (expiration_date > certificate.expiration_date && expiration_date >= block_timestamp),
+                "expiration date must be zero or greater than current date and registered date"
+            );
+    
             certificate.expiration_date = expiration_date;
         });
+    
+        self.change_expiration_date_event(certificate_id);
     }
 
     #[view]
-    fn events_certificate(&self,certificate_id: [u8; 32]) -> Events {
+    fn get_certificate_events(&self,certificate_id: [u8; 32]) -> CertificateEvents {
         let certificate = self.certifications(certificate_id).get();
 
-        Events { 
+        CertificateEvents { 
                 issuance_date: certificate.issuance_date,
                 expiration_date: certificate.expiration_date,
                 revoked_date: certificate.revoked_date,
-                is_valid: certificate.is_valid
             }
     }
 
     #[view]
-    fn proof_certificate(&self,certificate_id: [u8; 32], salt:[u8;32], data: &[u8]) -> bool { 
+    fn proof(&self,certificate_id: [u8; 32], salt:[u8;32], data: &[u8]) -> bool { 
         let mut leaf = [0; 32];
         leaf.copy_from_slice(&data[0..32]);
 
@@ -263,4 +278,5 @@ pub trait Issuer {
         }
         false
     }
+
 }

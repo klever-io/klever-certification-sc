@@ -16,11 +16,11 @@ klever_sc_wasm_adapter::endpoints! {
     issuer
     (
         init => init
-        create_certificate => create_certificate
-        check_certificate => check_certificate
-        revoke_certificate => revoke_certificate
+        create => create
+        check => check
+        revoke => revoke
         change_expiration_date => change_expiration_date
-        events_certificate => events_certificate
-        proof_certificate => proof_certificate
+        get_certificate_events => get_certificate_events
+        proof => proof
     )
 }
