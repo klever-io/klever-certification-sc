@@ -243,8 +243,8 @@ pub trait Issuer {
         self.certifications(certificate_id).update(|certificate| {
             require!(
                 expiration_date == 0 || 
-                (expiration_date > certificate.expiration_date && expiration_date >= block_timestamp),
-                "expiration date must be zero or greater than current date and registered date"
+                expiration_date >= block_timestamp,
+                "expiration date must be zero or greater than current date"
             );
     
             certificate.expiration_date = expiration_date;
