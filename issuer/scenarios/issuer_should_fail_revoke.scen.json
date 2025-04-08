@@ -3,7 +3,7 @@
     "steps": [
         {
             "step": "externalSteps",
-            "path": "issuer_1_field_init.scen.json"
+            "path": "issuer_should_work_revoke.scen.json"
         },
         {
             "step": "scCall",
@@ -20,7 +20,8 @@
             },
             "expect": {
                 "out": [],
-                "status": "",
+                "status": "57",
+                "message": "str:certificate already revoked",
                 "logs": "*",
                 "gas": "*",
                 "refund": "*"

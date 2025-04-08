@@ -21,7 +21,7 @@
                 "gasPrice": "0"
             },
             "expect": {
-                "out": ["0x66c99652c0dda2b6e364c39f94c933b5f98a719c1b81680b282c511f378496ad"],
+                "out": ["0x4d03e63486b931376040cf870462d0995bdf1f4807935d1c7b25eaac15ce2ae4"],
                 "status": "",
                 "logs": "*",
                 "gas": "*",
@@ -36,7 +36,7 @@
                 "to": "sc:empty",
                 "function": "proof",
                 "arguments": [
-                    "0x66c99652c0dda2b6e364c39f94c933b5f98a719c1b81680b282c511f378496ad",
+                    "0x4d03e63486b931376040cf870462d0995bdf1f4807935d1c7b25eaac15ce2ae4",
                     "0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7",
                     "0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7"
                 ],

@@ -26,13 +26,25 @@ fn issuer_should_work_max_field_proof_rs() {
 }
 
 #[test]
-fn issuer_should_work_zero_expiration() {
+fn issuer_should_work_zero_expiration_rs() {
     world().run("scenarios/issuer_should_work_zero_expiration.json");
 }
 
 // Revoke Tests
 
 #[test]
-fn issuer_should_work_revoke() {
+fn issuer_should_work_revoke_rs() {
     world().run("scenarios/issuer_should_work_revoke.scen.json");
+}
+
+#[test]
+fn issuer_should_fail_revoke_rs() {
+    world().run("scenarios/issuer_should_fail_revoke.scen.json");
+}
+
+// Change Expiration Date Tests
+
+#[test]
+fn issuer_change_expiration_date_rs() {
+    world().run("scenarios/issuer_change_expiration_date.scen.json");
 }
