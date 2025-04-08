@@ -7,18 +7,32 @@ fn world() -> ScenarioWorld {
     blockchain
 }
 
+// Create and Proof Tests
+
 #[test]
-fn issuer_should_work_1_field_rs() {
-    world().run("scenarios/issuer_should_work_1_field.scen.json");
+fn issuer_should_fail_proof_rs() {
+    world().run("scenarios/issuer_should_fail_proof.scen.json");
+}
+
+
+#[test]
+fn issuer_should_work_1_field_proof_rs() {
+    world().run("scenarios/issuer_should_work_1_field_proof.scen.json");
 }
 
 #[test]
-fn issuer_should_work_max_field_rs() {
-    world().run("scenarios/issuer_should_work_max_field.scen.json");
+fn issuer_should_work_max_field_proof_rs() {
+    world().run("scenarios/issuer_should_work_max_field_proof.scen.json");
 }
 
 #[test]
-fn issuer_should_fail_wrong_field_rs() {
-    world().run("scenarios/issuer_should_fail_field.scen.json");
+fn issuer_should_work_zero_expiration() {
+    world().run("scenarios/issuer_should_work_zero_expiration.json");
 }
 
+// Revoke Tests
+
+#[test]
+fn issuer_should_work_revoke() {
+    world().run("scenarios/issuer_should_work_revoke.scen.json");
+}

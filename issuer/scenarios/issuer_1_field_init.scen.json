@@ -1,0 +1,27 @@
+{
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "issuer_deploy.scen.json"
+        },
+        {
+            "step": "scCall",
+            "id": "create_certification",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "create",
+                "arguments": ["100","0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7","0x6745466d134313094bd747cc9f24f54eba19e3f654a2ebb7b9ce4665ac53d8c7"],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["0x5a94a127e069934f47648da7b973564b1d257cfa82b2df2d113783d92644b4c2"],
+                "status": "",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
+        }
+    ]
+}
