@@ -1,9 +1,29 @@
 {
-    "name": "1 field deploy and proof",
     "steps": [
         {
             "step": "externalSteps",
-            "path": "issuer_should_work_revoke.scen.json"
+            "path": "issuer_base_init.scen.json"
+        },
+        {
+            "step": "scCall",
+            "id": "revoke_certificate",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "revoke",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
         },
         {
             "step": "scCall",

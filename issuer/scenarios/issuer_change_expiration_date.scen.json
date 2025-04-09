@@ -2,7 +2,7 @@
     "steps": [
         {
             "step": "externalSteps",
-            "path": "issuer_1_field_init.scen.json"
+            "path": "issuer_base_init.scen.json"
         },
         {
         
