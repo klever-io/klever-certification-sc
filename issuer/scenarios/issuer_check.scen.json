@@ -1,0 +1,125 @@
+{
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "issuer_base_init.scen.json"
+        },
+        {
+            "step": "scCall",
+            "id": "check_certificate",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "check",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "setState",
+            "currentBlockInfo": {
+                "blockTimestamp": "150"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "check_certificate",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "check",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["false"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "setState",
+            "currentBlockInfo": {
+                "blockTimestamp": "50"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "check_certificate",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "check",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["true"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "revoke_certificate",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "revoke",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "check_certificate",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "check",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": ["false"],
+                "status": "",
+                "logs": [],
+                "gas": "*",
+                "refund": "*"
+            }
+        }
+    ]
+}

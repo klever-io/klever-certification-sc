@@ -34,3 +34,18 @@ fn issuer_revoke_rs() {
 fn issuer_change_expiration_date_rs() {
     world().run("scenarios/issuer_change_expiration_date.scen.json");
 }
+
+
+// Check Tests
+
+#[test]
+fn issuer_check_rs() {
+    world().run("scenarios/issuer_check.scen.json");
+}
+
+// Get Certificate Events Tests
+
+#[test]
+fn issuer_get_certificate_events_rs() {
+    world().run("scenarios/issuer_get_certificate_events.scen.json");
+}
