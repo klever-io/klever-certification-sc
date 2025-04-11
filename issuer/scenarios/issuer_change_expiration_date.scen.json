@@ -1,0 +1,76 @@
+{
+    "steps": [
+        {
+            "step": "externalSteps",
+            "path": "issuer_base_init.scen.json"
+        },
+        {
+        
+            "step": "scCall",
+            "id": "change_expiration_date",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "change_expiration_date",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77",
+                    "101"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "change_expiration_date",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "change_expiration_date",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77",
+                    "0"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "change_expiration_date",
+            "tx": {
+                "from": "address:owner",
+                "to": "sc:empty",
+                "function": "change_expiration_date",
+                "arguments": [
+                    "0xb368148438e5299e0b6338b052dd92e939c28743bca572572c0029257dccce77",
+                    "25"
+                ],
+                "gasLimit": "5,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "57",
+                "logs": "*",
+                "message": "str:expiration date must be zero or greater than current date",
+                "gas": "*",
+                "refund": "*"
+            }
+        }
+    ]
+}
