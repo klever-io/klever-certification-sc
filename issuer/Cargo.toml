@@ -9,13 +9,11 @@ publish = false
 path = "src/issuer.rs"
 
 [dependencies.klever-sc]
-path = "/Users/beroni/klever/klever-vm-sdk-rs-internal/framework/base"
-version = "*"
+version = "0.44.0"
 features = ["alloc"]
 
 [dev-dependencies.klever-sc-scenario]
-path = "/Users/beroni/klever/klever-vm-sdk-rs-internal/framework/scenario"
-version = "*"
+version = "0.44.0"
 
 [workspace]
 members = [".", "meta"]

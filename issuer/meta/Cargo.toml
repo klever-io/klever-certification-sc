@@ -7,5 +7,4 @@ publish = false
 path = ".."
 
 [dependencies.klever-sc-meta]
-path = "/Users/beroni/klever/klever-vm-sdk-rs-internal/framework/meta"
-version = "*"
+version = "0.44.0"
