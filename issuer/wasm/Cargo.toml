@@ -26,8 +26,7 @@ panic = "abort"
 path = ".."
 
 [dependencies.klever-sc-wasm-adapter]
-version = "*"
-path = "/Users/beroni/klever/klever-vm-sdk-rs-internal/framework/wasm-adapter"
+version = "0.44.0"
 
 [workspace]
 members = ["."]
