@@ -176,4 +176,4 @@ Verifies whether a specific attribute (hash) is part of a certificate’s Merkle
 
 ## 📬 Contact
 
-For more information, reach out to the Klever Blockchain developer team or open a discussion in the [Klever Forum](https://forum.klever.orghttps://forum.klever.org/c/kleverchain/developers/9)
+For more information, reach out to the Klever Blockchain developer team or open a discussion in the [Klever Forum](https://forum.klever.org/c/kleverchain/developers/9)
